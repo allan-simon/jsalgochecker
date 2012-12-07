@@ -2,6 +2,17 @@
     function Token(str,lineNbr) {
         "use strict";
         
+        this.humanType = function (type) {
+            var typeToHuman = {
+                //TODO to i18n
+                'TYPE' : 'type',
+                'VARIABLE' : 'variable name',
+                'STRUCT' : 'structure keyword'
+                //TODO to complete
+            }
+            return typeToHuman[type]
+        };
+
         function tokenType(str) {
             if (isTypeToken(str)) {
                 return "TYPE";

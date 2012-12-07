@@ -1,36 +1,9 @@
 window.onload = function () {
     "use strict";
 
-    function Context() {
-        this.indentation = 4; // by default a tabulation
-        this.indentLevel = 0;
-        this.tokensStack = [];
-        this.inside = 'ALL';
-        this.ast = {};
-
-        this.debugTokens = function() {
-            var tokensStr = [];
-            this.tokensStack.forEach(function(token){
-                tokensStr.push(token.str);
-            });
-            console.log(tokensStr);
-        }
-        /*
-        this.checkTokens = function() {
-            this.tokensStack.forEach(function(token) {
-                function goInBlock
-            });
-        }
-        */
-    }
-
-
     // will be used to store all the erros
     var context = new Context();
     var errors = [];
-
-
-
 
     /**
      *check if the character is a tab or space
@@ -190,12 +163,14 @@ window.onload = function () {
             newTokens
         );
     }
+
+
     /**
      *
      */
     function checkPresence(
         tokens,
-        tokenTofind,
+        presenceChecker,
         occurence,
         forbiddenTokens,
         endTokens,
@@ -210,8 +185,11 @@ window.onload = function () {
             if (endFound) {
                 return;
             }
-            if (token.str === tokenTofind) {
+            if (presenceChecker.check(token)) {
                 foundCount += 1;
+                // we ignore the first token
+                // as we've just analyze it
+                blockCallBack(tokens.slice(1))
             }
 
             if (foundCount > 0) {
@@ -234,26 +212,32 @@ window.onload = function () {
                 }
             } else if ( foundCount === 0 ) {
                 endFound = true;
-                var tmpError = new Error(
-                    tokenTofind + ' expected, but found ' + token.str + ' instead',
-                    token.lineNbr,
-                    0
-                );
-                errors.push(tmpError);
+                if (occurence === '1' ) {
+                    var tmpError = new Error(
+                        presenceChecker.notFoundError(token),
+                        token.lineNbr,
+                        0
+                    );
+                    errors.push(tmpError);
+                }
 
             }            
         });
 
         // after iterating we check how many we've found
-        if (occurence === '1' && foundCount !== 1) {
+        if (
+            (occurence === '1' && foundCount !== 1) ||
+            (occurence === '?' && foundCount > 1)
+        ) {
             var tmpError = new Error(
-                'The keyword ' + tokenTofind + ' should be present one time' ,
+                presenceChecker.occurenceError(occurence),
                 9999,
                 0
             );
             errors.push(tmpError);
             return 0;
-        }
+        } 
+
         if (!endFound) {
             return firstNotExpectedToken;
         }
@@ -262,41 +246,108 @@ window.onload = function () {
     }
 
 
+
+    function checkVarDeclaration(tokens) {
+        var endPosition = 0;
+        endPosition += checkPresence(
+            tokens,
+            new GrammarTokenEqualType('VARIABLE'),
+            '1',
+            ['IF','ELSE','BEGIN'],
+            ['<-',':'],
+            function(tokens){}
+        );
+        endPosition += checkPresence(
+            tokens.slice(endPosition),
+            new GrammarTokenEqualStr('<-'),
+            '?',
+            ['IF','ELSE','BEGIN','VAR'],
+            [':'],
+            function(tokens){}
+        );
+
+        endPosition += checkPresence(
+            tokens.slice(endPosition),
+            new GrammarTokenEqualStr(':'),
+            '1',
+            ['IF','ELSE','BEGIN','VAR'],
+            ['INTEGER','STRING','CHARACTER','REAL','BOOLEAN'],
+            function(tokens){}
+        );
+
+        endPosition += checkPresence(
+            tokens.slice(endPosition),
+            new GrammarTokenEqualType('TYPE'),
+            '1',
+            ['IF','ELSE','BEGIN','VAR'],
+            ['INTEGER','STRING','CHARACTER','REAL','BOOLEAN'],
+            function(tokens){}
+        );
+
+
+        
+    }
+
+
+    function checkBeginBlock(tokens) {
+        var endPosition = 0;
+        endPosition += checkPresence(
+            tokens,
+            new GrammarTokenEqualStr('SOFTWARE'),
+            '1',
+            ['IF','ELSE','BEGIN'],
+            ['CONST','VAR','BEGIN'],
+            function(tokens){}
+        );
+
+
+    }
+
     function checkGrammar(tokens) {
         var endPosition = 0;
         endPosition += checkPresence(
             tokens,
-            'SOFTWARE',
+            new GrammarTokenEqualStr('SOFTWARE'),
             '1',
             ['IF','ELSE','BEGIN'],
             ['CONST','VAR','BEGIN'],
-            function(){}
+            function(tokens){}
         );
+
         endPosition += checkPresence(
             tokens.slice(endPosition),
-            'VAR',
-            '1',
+            new GrammarTokenEqualStr('CONST'),
+            '?',
             ['IF','ELSE','END IF','THEN'],
-            ['BEGIN'],
-            function(){}
+            ['BEGIN','VAR'],
+            checkVarDeclaration
         )
         
         endPosition += checkPresence(
             tokens.slice(endPosition),
-            'BEGIN',
+            new GrammarTokenEqualStr('VAR'),
+            '1',
+            ['IF','ELSE','END IF','THEN'],
+            ['BEGIN'],
+            checkVarDeclaration
+        )
+        
+        endPosition += checkPresence(
+            tokens.slice(endPosition),
+            new GrammarTokenEqualStr('BEGIN'),
             '1',
             ['VAR'],
             ['END'],
-            function(){}
+            function(tokens){}
         )
 
         endPosition += checkPresence(
             tokens.slice(endPosition),
-            'END',
+            new GrammarTokenEqualStr('END'),
             '1',
             ['SOFTWARE'],
             ['END'],
-            function(){}
+            function(tokens){}
         )
 
     }
