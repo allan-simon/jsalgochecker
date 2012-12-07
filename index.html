@@ -1,0 +1,47 @@
+<!Doctype html>
+<html>
+<head>
+	<title>Algorithm Checker</title>
+    <script src="js/jquery-1.8.3.min.js"></script>
+	<script src="js/tabIndent.js"></script>
+	<script src="js/errors.js"></script>
+	<script src="js/isType.js"></script>
+	<script src="js/tokenize.js"></script>
+	<script src="js/check.js"></script>
+	<style type="text/css">
+
+
+
+		textarea {
+			width: 50%;
+			margin: 0 auto;
+			border: 2px solid #666;
+			padding: 12px;
+			font-family: consolas, monospace;
+			height: 200px;
+			overflow: auto;
+			display: block;
+			background: #333;
+			color: #ccc;
+			resize: none;
+		}
+	</style>
+</head>
+<body>
+
+    <h1>Algorithm checker version 0.2.2 By Allan SIMON </h1>
+    <p>
+        Enter your algorithm to check if you've made no mistakes<br/>
+        Note: for the moment it does only correct simple mistakes
+    </p>
+    <textarea class="tabIndent" id="foobar"></textarea>
+    <input type="submit" id="check" value="Check Syntax"/>
+    <script>
+        tabIndent.renderAll();
+    </script>
+    <div id="results"> 
+
+    </div>
+</body>
+</html>
+
